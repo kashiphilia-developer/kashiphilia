@@ -42,19 +42,31 @@ export async function POST(req: Request) {
   const userId = (session?.user as { id?: string } | undefined)?.id;
   if (!userId)
     return NextResponse.json({ error: "Not signed in" }, { status: 401 });
-  const body = (await req.json()) as Partial<Spot>;
-  if (!body.id || !body.name || body.lat == null || body.lon == null) {
+  const raw = await req.json();
+  // accept either the current Spot shape (id,name,lat,lon)
+  // or legacy payloads using spotId/spotName/spotLat/spotLon
+  const body = (raw || {}) as Partial<Spot> & {
+    spotId?: string;
+    spotName?: string;
+    spotLat?: number;
+    spotLon?: number;
+  };
+  const id = body.id ?? body.spotId;
+  const name = body.name ?? body.spotName;
+  const lat = body.lat ?? body.spotLat;
+  const lon = body.lon ?? body.spotLon;
+  if (!id || !name || lat == null || lon == null) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }
   try {
     await prisma.favorite.upsert({
-      where: { userId_spotId: { userId, spotId: body.id } },
+      where: { userId_spotId: { userId, spotId: id } },
       create: {
         userId,
-        spotId: body.id,
-        spotName: body.name,
-        spotLat: body.lat,
-        spotLon: body.lon,
+        spotId: id,
+        spotName: name,
+        spotLat: lat,
+        spotLon: lon,
       },
       update: {},
     });
