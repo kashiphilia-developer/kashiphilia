@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import type { Spot } from "@/lib/types";
 
@@ -40,7 +40,8 @@ export async function GET() {
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   const userId = (session?.user as { id?: string } | undefined)?.id;
-  if (!userId) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  if (!userId)
+    return NextResponse.json({ error: "Not signed in" }, { status: 401 });
   const body = (await req.json()) as Partial<Spot>;
   if (!body.id || !body.name || body.lat == null || body.lon == null) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
@@ -67,9 +68,11 @@ export async function POST(req: Request) {
 export async function DELETE(req: Request) {
   const session = await getServerSession(authOptions);
   const userId = (session?.user as { id?: string } | undefined)?.id;
-  if (!userId) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  if (!userId)
+    return NextResponse.json({ error: "Not signed in" }, { status: 401 });
   const body = (await req.json()) as { spotId?: string };
-  if (!body.spotId) return NextResponse.json({ error: "Missing spotId" }, { status: 400 });
+  if (!body.spotId)
+    return NextResponse.json({ error: "Missing spotId" }, { status: 400 });
   await prisma.favorite.deleteMany({ where: { userId, spotId: body.spotId } });
   return NextResponse.json({ ok: true });
 }
