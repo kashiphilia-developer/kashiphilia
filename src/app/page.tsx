@@ -17,22 +17,25 @@ export default function Home() {
   const [spots, setSpots] = useState<Spot[]>([]);
   const [locationLabel, setLocationLabel] = useState("");
 
-  const fetchSpots = useCallback(async (lat: number, lon: number, label: string) => {
-    setStatus("searching");
-    setError(null);
-    try {
-      const { spots, source } = await getTopSpots(lat, lon, 10, 5);
-      setSpots(spots);
-      setSource(source);
-      setUser({ lat, lon });
-      setLocationLabel(label);
-      setStatus("ready");
-    } catch (e) {
-      console.error(e);
-      setError("Couldn't fetch nearby spots. Please try again.");
-      setStatus("error");
-    }
-  }, []);
+  const fetchSpots = useCallback(
+    async (lat: number, lon: number, label: string) => {
+      setStatus("searching");
+      setError(null);
+      try {
+        const { spots, source } = await getTopSpots(lat, lon, 10, 5);
+        setSpots(spots);
+        setSource(source);
+        setUser({ lat, lon });
+        setLocationLabel(label);
+        setStatus("ready");
+      } catch (e) {
+        console.error(e);
+        setError("Couldn't fetch nearby spots. Please try again.");
+        setStatus("error");
+      }
+    },
+    [],
+  );
 
   const useMyLocation = useCallback(() => {
     if (typeof window === "undefined" || !("geolocation" in navigator)) {
@@ -97,18 +100,34 @@ export default function Home() {
         </div>
       )}
 
+      {status === "locating" && (
+        <div className="card p-4 text-sm text-slate-600">
+          Finding your location…
+        </div>
+      )}
+
+      {status === "searching" && (
+        <div className="card p-4 text-sm text-slate-600">
+          Loading nearby spots…
+        </div>
+      )}
+
       {status === "ready" && (
         <>
           <div className="rounded-xl border border-slate-200 bg-white p-3">
             <div className="mb-2 flex items-center justify-between text-sm">
-              <span className="font-semibold text-slate-800">{locationLabel}</span>
+              <span className="font-semibold text-slate-800">
+                {locationLabel}
+              </span>
               <span className="text-xs text-slate-500">Within 10 km</span>
             </div>
             <MapLoader user={user} spots={spots} />
             <p className="mt-2 text-[11px] text-slate-500">
               {source === "overpass" && "Data from OpenStreetMap."}
-              {source === "overpass+curated" && "Mix of OpenStreetMap and featured landmarks."}
-              {source === "curated" && "Featured landmarks only (no live data for this area)."}
+              {source === "overpass+curated" &&
+                "Mix of OpenStreetMap and featured landmarks."}
+              {source === "curated" &&
+                "Featured landmarks only (no live data for this area)."}
             </p>
           </div>
 
@@ -133,7 +152,8 @@ export default function Home() {
 
       {status === "idle" && (
         <div className="card p-4 text-sm text-slate-600">
-          Tap <strong>Use my current location</strong> or search a place above to begin.
+          Tap <strong>Use my current location</strong> or search a place above
+          to begin.
         </div>
       )}
     </div>
@@ -142,7 +162,15 @@ export default function Home() {
 
 function PinIcon({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z" />
       <circle cx="12" cy="10" r="3" />
     </svg>
