@@ -14,7 +14,8 @@ export default function AudioPlayer({
   famousFor: string;
   backstory: string;
 }) {
-  const { status, supported, error, progress, play, pause, resume, stop } = useNarration();
+  const { status, supported, error, progress, play, pause, resume, stop } =
+    useNarration();
   const [showError, setShowError] = useState(false);
 
   if (!supported) {
@@ -34,24 +35,45 @@ export default function AudioPlayer({
             className="btn-primary"
             onClick={() => {
               setShowError(false);
-              play({ intro, summary, famousFor, backstory });
+              if (status === "paused") {
+                resume();
+              } else {
+                play({ intro, summary, famousFor, backstory });
+              }
             }}
-            aria-label="Play audio narration"
+            aria-label={
+              status === "paused" ? "Resume audio" : "Play audio narration"
+            }
           >
-            <PlayIcon className="h-4 w-4" /> {status === "paused" ? "Resume" : "Play 5-min audio"}
+            <PlayIcon className="h-4 w-4" />{" "}
+            {status === "paused" ? "Resume" : "Play 5-min audio"}
           </button>
         ) : (
-          <button type="button" className="btn-primary" onClick={pause} aria-label="Pause audio">
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={pause}
+            aria-label="Pause audio"
+          >
             <PauseIcon className="h-4 w-4" /> Pause
           </button>
         )}
         {status !== "idle" && (
-          <button type="button" className="btn-secondary" onClick={stop} aria-label="Stop audio">
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={stop}
+            aria-label="Stop audio"
+          >
             <StopIcon className="h-4 w-4" /> Stop
           </button>
         )}
         <div className="ml-auto text-xs text-slate-500">
-          {status === "idle" ? "Ready" : status === "playing" ? "Playing…" : "Paused"}
+          {status === "idle"
+            ? "Ready"
+            : status === "playing"
+              ? "Playing…"
+              : "Paused"}
         </div>
       </div>
       <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
@@ -83,14 +105,24 @@ export default function AudioPlayer({
 
 function PlayIcon({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" className={className} fill="currentColor" stroke="none">
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="currentColor"
+      stroke="none"
+    >
       <polygon points="6,4 20,12 6,20" />
     </svg>
   );
 }
 function PauseIcon({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" className={className} fill="currentColor" stroke="none">
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="currentColor"
+      stroke="none"
+    >
       <rect x="6" y="4" width="4" height="16" />
       <rect x="14" y="4" width="4" height="16" />
     </svg>
@@ -98,7 +130,12 @@ function PauseIcon({ className }: { className?: string }) {
 }
 function StopIcon({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" className={className} fill="currentColor" stroke="none">
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="currentColor"
+      stroke="none"
+    >
       <rect x="6" y="6" width="12" height="12" rx="1" />
     </svg>
   );

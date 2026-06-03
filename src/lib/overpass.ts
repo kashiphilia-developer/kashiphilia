@@ -44,7 +44,10 @@ export async function fetchNearbySpots(
     const res = await fetch(OVERPASS, {
       method: "POST",
       body: new URLSearchParams({ data: query }).toString(),
-      headers: { "User-Agent": USER_AGENT, "Content-Type": "application/x-www-form-urlencoded" },
+      headers: {
+        "User-Agent": USER_AGENT,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
       signal,
       cache: "no-store",
     });
@@ -69,9 +72,10 @@ function normalise(
     const tags = el.tags || {};
     const name = tags.name || tags["name:en"];
     if (!name) continue;
-    const p = el.lat !== undefined && el.lon !== undefined
-      ? { lat: el.lat, lon: el.lon }
-      : el.center;
+    const p =
+      el.lat !== undefined && el.lon !== undefined
+        ? { lat: el.lat, lon: el.lon }
+        : el.center;
     if (!p) continue;
     const id = `${el.type}/${el.id}`;
     if (seen.has(id)) continue;
@@ -138,36 +142,73 @@ function pickCategory(tags: Record<string, string>): string {
 function buildSummary(tags: Record<string, string>, category: string): string {
   if (tags.description || tags["description:en"]) {
     const d = (tags.description || tags["description:en"] || "").trim();
-    return clampWords(d, 30);
+    return clampWords(d, 50);
   }
   return `A ${category.toLowerCase()} worth visiting nearby. Tap "More history" to learn more about its background.`;
 }
 
-function buildFamousFor(tags: Record<string, string>, category: string): string {
+function buildFamousFor(
+  tags: Record<string, string>,
+  category: string,
+): string {
   if (tags.heritage) return `Recognised heritage site (${tags.heritage}).`;
-  if (tags.wikidata) return `Listed on Wikidata — see linked source for more about its cultural importance.`;
+  if (tags.wikidata)
+    return `Listed on Wikidata — see linked source for more about its cultural importance.`;
   return `Locally known ${category.toLowerCase()} with cultural or historical value in the area.`;
 }
 
 function buildBackstory(tags: Record<string, string>): string {
   const parts: string[] = [];
   const cat = pickCategory(tags);
-  parts.push(`This is a ${cat.toLowerCase()} recorded in OpenStreetMap.`);
+
+  // Build a more detailed narrative (aim for 100-150 words)
+  parts.push(
+    `This ${cat.toLowerCase()} is a notable site in the area. It is recorded in OpenStreetMap, a collaborative mapping database that documents landmarks, attractions, and historic locations worldwide.`,
+  );
+
   if (tags.start_date || tags.built) {
-    parts.push(`Its recorded start date is ${tags.start_date || tags.built}.`);
+    const date = tags.start_date || tags.built;
+    parts.push(
+      `The site dates back to ${date}, marking its place in local and regional history.`,
+    );
   }
-  if (tags.architect) parts.push(`Architect: ${tags.architect}.`);
-  if (tags.operator) parts.push(`Operator: ${tags.operator}.`);
+
+  if (tags.architect) {
+    parts.push(
+      `It was designed or built by ${tags.architect}, contributing to its architectural significance.`,
+    );
+  }
+
+  if (tags.operator) {
+    parts.push(
+      `Currently operated by ${tags.operator}, ensuring its maintenance and public accessibility.`,
+    );
+  }
+
+  if (tags.heritage || tags.wikidata) {
+    if (tags.heritage) {
+      parts.push(
+        `This site holds recognized heritage status (${tags.heritage}), acknowledging its cultural and historical importance.`,
+      );
+    }
+    if (tags.wikidata) {
+      parts.push(
+        `It is documented on Wikidata and other international databases, reflecting its significance.`,
+      );
+    }
+  }
+
   if (tags.wikipedia) {
     const wiki = tags.wikipedia;
     const title = wiki.replace(/^[a-z]{2}:/i, "");
     const url = `https://en.wikipedia.org/wiki/${encodeURIComponent(title)}`;
-    parts.push(`Read more on Wikipedia: ${url}`);
+    parts.push(`For comprehensive information, read more on Wikipedia: ${url}`);
   } else {
     parts.push(
-      "OpenStreetMap lists the spot but full historical context isn't pre-loaded. Connect an LLM-backed summary service to enrich this card with a longer narrative.",
+      `Visitors are encouraged to explore this location in person to fully appreciate its characteristics and learn from local guides or information plaques on-site.`,
     );
   }
+
   return parts.join(" ");
 }
 

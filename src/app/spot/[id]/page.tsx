@@ -23,7 +23,12 @@ export default function SpotDetailPage() {
     async function load() {
       if (lat && lon) {
         try {
-          const { spots } = await getTopSpots(parseFloat(lat), parseFloat(lon), 10, 5);
+          const { spots } = await getTopSpots(
+            parseFloat(lat),
+            parseFloat(lon),
+            10,
+            5,
+          );
           const found = spots.find((s) => s.id === id);
           if (found) {
             setSpot(found);
@@ -54,7 +59,9 @@ export default function SpotDetailPage() {
   if (error) {
     return (
       <div className="space-y-3">
-        <Link href="/" className="btn-ghost">← Back</Link>
+        <Link href="/" className="btn-ghost">
+          ← Back
+        </Link>
         <p className="card p-4 text-sm text-slate-600">{error}</p>
       </div>
     );
@@ -62,15 +69,26 @@ export default function SpotDetailPage() {
   if (!spot) {
     return (
       <div className="space-y-3">
-        <Link href="/" className="btn-ghost">← Back</Link>
-        <div className="card p-4 text-sm text-slate-500">Loading…</div>
+        <Link href="/" className="btn-ghost">
+          ← Back
+        </Link>
+        <div className="card p-4">
+          <div className="flex items-center gap-3">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-brand-300 border-t-brand-600"></div>
+            <span className="text-sm text-slate-500">
+              Loading spot details…
+            </span>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      <Link href="/" className="btn-ghost">← Back</Link>
+      <Link href="/" className="btn-ghost">
+        ← Back
+      </Link>
 
       <header>
         <div className="flex items-start justify-between gap-3">
@@ -90,7 +108,7 @@ export default function SpotDetailPage() {
 
       <section className="card p-4">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-          In 30 words
+          In 50 words
         </h2>
         <p className="mt-1 text-slate-800">{spot.summary}</p>
         <p className="mt-3 text-sm text-slate-600">
@@ -134,7 +152,9 @@ export default function SpotDetailPage() {
             )}
           </div>
         ) : (
-          <p className="mt-2 text-xs text-slate-500">Tap to expand a longer backstory.</p>
+          <p className="mt-2 text-xs text-slate-500">
+            Tap to expand a longer backstory.
+          </p>
         )}
       </section>
     </div>
