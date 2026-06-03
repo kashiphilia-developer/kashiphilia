@@ -223,6 +223,8 @@ export function useNarration() {
       const charIndex = getCharIndexForWord(fullText, startWord);
       const remainingText = fullText.slice(charIndex);
       if (!remainingText) return;
+      elapsedWordsRef.current = startWord;
+      setProgress(Math.min(1, elapsedWordsRef.current / totalWordsRef.current));
       synth.cancel();
       const utter = createUtterance(remainingText, charIndex, startWord);
       window.speechSynthesis.speak(utter);
@@ -262,6 +264,8 @@ export function useNarration() {
       const fullText = scriptTextRef.current || utteranceRef.current.text || "";
       const charIndex = getCharIndexForWord(fullText, newStartWord);
 
+      elapsedWordsRef.current = newStartWord;
+      setProgress(Math.min(1, elapsedWordsRef.current / totalWordsRef.current));
       window.speechSynthesis.cancel();
       const remainingText = fullText.slice(charIndex);
       const utter = createUtterance(remainingText, charIndex, newStartWord);
