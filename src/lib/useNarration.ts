@@ -65,6 +65,20 @@ export function useNarration() {
 
   const wordsPerSecond = useCallback(() => 2.2 / speed, [speed]);
 
+  const estimateCurrentWords = useCallback(() => {
+    if (!playStartTimeRef.current || totalWordsRef.current === 0) {
+      return elapsedWordsRef.current;
+    }
+
+    const elapsedSeconds = (Date.now() - playStartTimeRef.current) / 1000;
+    return Math.min(
+      totalWordsRef.current,
+      Math.round(
+        currentWordOffsetRef.current + elapsedSeconds * wordsPerSecond(),
+      ),
+    );
+  }, [wordsPerSecond]);
+
   const stopProgressTimer = useCallback(() => {
     if (progressTimerRef.current !== null) {
       window.clearInterval(progressTimerRef.current);
@@ -106,6 +120,15 @@ export function useNarration() {
         startProgressTimer();
       };
       utter.onpause = () => {
+        const estimatedWords = estimateCurrentWords();
+        elapsedWordsRef.current = Math.max(
+          elapsedWordsRef.current,
+          estimatedWords,
+        );
+        setProgress(
+          Math.min(1, elapsedWordsRef.current / totalWordsRef.current),
+        );
+        playStartTimeRef.current = null;
         setStatus("paused");
         stopProgressTimer();
       };
@@ -166,16 +189,25 @@ export function useNarration() {
       setProgress(0);
       const utter = createUtterance(text, 0, 0);
       window.speechSynthesis.speak(utter);
+      startProgressTimer();
     },
-    [buildScript, createUtterance, supported],
+    [buildScript, createUtterance, startProgressTimer, supported],
   );
 
   const pause = useCallback(() => {
     if (supported && status === "playing") {
+      const estimatedWords = estimateCurrentWords();
+      elapsedWordsRef.current = Math.max(
+        elapsedWordsRef.current,
+        estimatedWords,
+      );
+      setProgress(Math.min(1, elapsedWordsRef.current / totalWordsRef.current));
+      playStartTimeRef.current = null;
       window.speechSynthesis.pause();
+      stopProgressTimer();
       setStatus("paused");
     }
-  }, [status, supported]);
+  }, [estimateCurrentWords, status, supported, stopProgressTimer]);
 
   const resume = useCallback(() => {
     if (!(supported && status === "paused")) {
@@ -184,29 +216,30 @@ export function useNarration() {
 
     const synth = window.speechSynthesis;
     const fullText = scriptTextRef.current || utteranceRef.current?.text || "";
-
-    if (synth.paused && utteranceRef.current) {
-      synth.resume();
-      setStatus("playing");
-      return;
-    }
-
-    if (!fullText) {
-      return;
-    }
-
     const startWord = elapsedWordsRef.current;
-    const charIndex = getCharIndexForWord(fullText, startWord);
-    const remainingText = fullText.slice(charIndex);
 
-    if (!remainingText) {
-      return;
-    }
+    const restartFromPausedPoint = () => {
+      if (!fullText) return;
+      const charIndex = getCharIndexForWord(fullText, startWord);
+      const remainingText = fullText.slice(charIndex);
+      if (!remainingText) return;
+      synth.cancel();
+      const utter = createUtterance(remainingText, charIndex, startWord);
+      window.speechSynthesis.speak(utter);
+      playStartTimeRef.current = Date.now();
+      startProgressTimer();
+      setStatus("playing");
+    };
 
     synth.cancel();
-    const utter = createUtterance(remainingText, charIndex, startWord);
-    synth.speak(utter);
-  }, [createUtterance, getCharIndexForWord, status, supported]);
+    restartFromPausedPoint();
+  }, [
+    createUtterance,
+    getCharIndexForWord,
+    startProgressTimer,
+    status,
+    supported,
+  ]);
 
   const stop = useCallback(() => {
     if (supported) {
