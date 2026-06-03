@@ -14,8 +14,10 @@ export function useNarration() {
   const [supported, setSupported] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
+  const [speed, setSpeed] = useState(1);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const totalWordsRef = useRef(0);
+  const elapsedWordsRef = useRef(0);
 
   useEffect(() => {
     setSupported(typeof window !== "undefined" && "speechSynthesis" in window);
@@ -58,9 +60,10 @@ export function useNarration() {
       const text = buildScript(parts);
       const words = text.split(/\s+/).filter(Boolean);
       totalWordsRef.current = words.length;
+      elapsedWordsRef.current = 0;
       setProgress(0);
       const utter = new SpeechSynthesisUtterance(text);
-      utter.rate = 0.95;
+      utter.rate = speed * 0.95;
       utter.pitch = 1;
       utter.onstart = () => setStatus("playing");
       utter.onpause = () => setStatus("paused");
@@ -81,12 +84,13 @@ export function useNarration() {
           .slice(0, charIndex)
           .split(/\s+/)
           .filter(Boolean).length;
+        elapsedWordsRef.current = spoken;
         setProgress(Math.min(1, spoken / totalWordsRef.current));
       };
       utteranceRef.current = utter;
       window.speechSynthesis.speak(utter);
     },
-    [buildScript, supported],
+    [buildScript, supported, speed],
   );
 
   const pause = useCallback(() => {
@@ -97,69 +101,94 @@ export function useNarration() {
   }, [status, supported]);
 
   const resume = useCallback(() => {
-    if (supported && status === "paused" && utteranceRef.current) {
-      const utter = utteranceRef.current;
-      const text = utter.text || "";
-
-      // Estimate characters per second based on rate and average word length
-      // At rate 0.95 (5% slower), typical speech is ~140-150 words per minute = ~2.3-2.5 words per second
-      // Average word is ~5 characters plus space, so ~15 chars per second
-      const estimatedCharsPerSec = Math.round(15 / utter.rate);
-      const seekBackChars = estimatedCharsPerSec; // ~1 second back
-
-      // Cancel current utterance
-      window.speechSynthesis.cancel();
-
-      // Estimate where we are in the text by calculating from progress
-      const estimatedCharIndex = Math.round(text.length * progress);
-      const newStartIndex = Math.max(0, estimatedCharIndex - seekBackChars);
-
-      // If we can seek back, restart from the new position
-      if (newStartIndex > 0) {
-        const remainingText = text.slice(newStartIndex);
-        const newUtter = new SpeechSynthesisUtterance(remainingText);
-        newUtter.rate = utter.rate;
-        newUtter.pitch = utter.pitch;
-
-        newUtter.onstart = () => setStatus("playing");
-        newUtter.onpause = () => setStatus("paused");
-        newUtter.onresume = () => setStatus("playing");
-        newUtter.onerror = (e) => {
-          setError(`Audio error: ${e.error || "unknown"}`);
-          setStatus("idle");
-        };
-        newUtter.onend = () => {
-          setStatus("idle");
-          setProgress(1);
-        };
-
-        newUtter.onboundary = (e) => {
-          if (e.name && e.name !== "word") return;
-          const charIndex = (e.charIndex || 0) + newStartIndex;
-          const spoken = text
-            .slice(0, charIndex)
-            .split(/\s+/)
-            .filter(Boolean).length;
-          setProgress(Math.min(1, spoken / totalWordsRef.current));
-        };
-
-        utteranceRef.current = newUtter;
-        window.speechSynthesis.speak(newUtter);
-      } else {
-        // If already near the beginning, just resume normally
-        window.speechSynthesis.resume();
-        setStatus("playing");
-      }
+    if (supported && status === "paused") {
+      window.speechSynthesis.resume();
+      setStatus("playing");
     }
-  }, [status, supported, progress]);
+  }, [status, supported]);
 
   const stop = useCallback(() => {
     if (supported) {
       window.speechSynthesis.cancel();
       setStatus("idle");
       setProgress(0);
+      elapsedWordsRef.current = 0;
     }
   }, [supported]);
 
-  return { status, supported, error, progress, play, pause, resume, stop };
+  const replay = useCallback(() => {
+    if (supported && utteranceRef.current && status !== "idle") {
+      // Restart from ~5 seconds back (estimate ~12 words per second at normal speed)
+      const replayWords = Math.round(12 / speed);
+      const newStartWord = Math.max(0, elapsedWordsRef.current - replayWords);
+      const text = utteranceRef.current.text || "";
+      const words = text.split(/\s+/).filter(Boolean);
+
+      // Find character position of the word to start from
+      let charIndex = 0;
+      for (let i = 0; i < newStartWord && i < words.length; i++) {
+        charIndex = text.indexOf(words[i], charIndex) + words[i].length + 1;
+      }
+
+      window.speechSynthesis.cancel();
+      const remainingText = text.slice(charIndex);
+      const newUtter = new SpeechSynthesisUtterance(remainingText);
+      newUtter.rate = speed * 0.95;
+      newUtter.pitch = 1;
+
+      newUtter.onstart = () => setStatus("playing");
+      newUtter.onpause = () => setStatus("paused");
+      newUtter.onresume = () => setStatus("playing");
+      newUtter.onerror = (e) => {
+        setError(`Audio error: ${e.error || "unknown"}`);
+        setStatus("idle");
+      };
+      newUtter.onend = () => {
+        setStatus("idle");
+        setProgress(1);
+      };
+
+      newUtter.onboundary = (e) => {
+        if (e.name && e.name !== "word") return;
+        const currentChar = (e.charIndex || 0) + charIndex;
+        const spoken = text
+          .slice(0, currentChar)
+          .split(/\s+/)
+          .filter(Boolean).length;
+        elapsedWordsRef.current = spoken;
+        setProgress(Math.min(1, spoken / totalWordsRef.current));
+      };
+
+      utteranceRef.current = newUtter;
+      window.speechSynthesis.speak(newUtter);
+    }
+  }, [supported, status, speed]);
+
+  const getElapsedSeconds = () => {
+    // Estimate: ~140-150 words per minute = ~2.3-2.5 words per second at normal rate
+    // At rate 0.95, it's about 2.2 words per second
+    const wordsPerSec = 2.2 / speed;
+    return Math.round(elapsedWordsRef.current / wordsPerSec);
+  };
+
+  const getTotalSeconds = () => {
+    const wordsPerSec = 2.2 / speed;
+    return Math.round(totalWordsRef.current / wordsPerSec);
+  };
+
+  return {
+    status,
+    supported,
+    error,
+    progress,
+    speed,
+    setSpeed,
+    play,
+    pause,
+    resume,
+    stop,
+    replay,
+    getElapsedSeconds,
+    getTotalSeconds,
+  };
 }
