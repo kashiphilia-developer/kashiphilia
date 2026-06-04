@@ -61,7 +61,11 @@ export default function SearchBox({
           className="btn-primary"
           disabled={!q.trim()}
           onClick={() => {
-            if (results[0]) onPick(results[0]);
+            if (results[0]) {
+              onPick(results[0]);
+              setOpen(false);
+              setQ(results[0].displayName);
+            }
           }}
         >
           Search

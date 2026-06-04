@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import BottomNav from "@/components/BottomNav";
 import Providers from "@/components/Providers";
+import ThemeControls from "@/components/ThemeControls";
 
 export const metadata: Metadata = {
   title: "Kashiphilia — Discover nearby heritage",
@@ -23,9 +24,23 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-slate-50">
+      <body className="min-h-screen">
         <Providers>
           <div className="mx-auto flex min-h-screen max-w-screen-md flex-col">
+            <div
+              className="border-b px-4 py-3 backdrop-blur sm:px-6"
+              style={{
+                background: "var(--panel)",
+                borderColor: "var(--border)",
+              }}
+            >
+              <div className="mx-auto flex max-w-screen-md items-center justify-between gap-4">
+                <p className="text-sm" style={{ color: "var(--muted)" }}>
+                  Theme controls
+                </p>
+                <ThemeControls />
+              </div>
+            </div>
             <main className="flex-1 px-4 pb-24 pt-4 sm:px-6">{children}</main>
             <BottomNav />
           </div>
