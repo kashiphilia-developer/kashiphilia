@@ -3,6 +3,7 @@
 Mobile-friendly Next.js app for discovering tourist spots near any location with summaries, audio narration, and saved favorites.
 
 ## Features
+
 1. **Use my location** — `navigator.geolocation` → top 5 spots within 10 km.
 2. **Search any place** — Nominatim autocomplete, then top 5 spots within 10 km of the picked place.
 3. **30-word summary + "why famous"** on each spot's detail page.
@@ -12,6 +13,7 @@ Mobile-friendly Next.js app for discovering tourist spots near any location with
 7. **Saved tab** lists your favourites.
 
 ## Stack
+
 - Next.js 14 (App Router) + TypeScript + Tailwind CSS
 - Leaflet (via `react-leaflet`, dynamic import for SSR)
 - OpenStreetMap tiles + Nominatim geocoder + Overpass API for nearby POIs
@@ -32,6 +34,7 @@ Open <http://localhost:3000>.
 ### Environment
 
 `.env`:
+
 ```
 DATABASE_URL="file:./dev.db"
 NEXTAUTH_SECRET="change-me-in-production"
@@ -39,6 +42,7 @@ NEXTAUTH_URL="http://localhost:3000"
 ```
 
 ## Project layout
+
 - `src/app/page.tsx` — Discover (search + geolocation + map + top 5 list)
 - `src/app/spot/[id]/page.tsx` — Spot detail (summary, audio, more history)
 - `src/app/favorites/page.tsx` — Saved spots
@@ -52,7 +56,12 @@ NEXTAUTH_URL="http://localhost:3000"
 - `src/lib/favorites.tsx` — Guest + auth-aware favourites context
 - `src/lib/useNarration.ts` — Web Speech API wrapper
 
+## Architecture documentation
+
+- See `ARCHITECTURE.md` for a high-level architecture overview, sequence diagrams, API route details, external service usage, and database schema.
+
 ## Notes / limitations
+
 - The browser's Web Speech API gives robotic audio. Swap `useNarration` for a server-side TTS (ElevenLabs / OpenAI) to upgrade voice quality.
 - The 30-word summary for OSM data is currently derived from the `description` tag if present, otherwise a generic placeholder. A future improvement is to call an LLM to summarise a Wikipedia blurb.
 - The dev server is running at <http://localhost:3000> in the background; stop it with `TaskStop`.
