@@ -13,7 +13,7 @@ const TABS = [
 export default function BottomNav() {
   const pathname = usePathname();
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-30 border-t border-slate-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
+    <nav className="fixed bottom-8 left-0 right-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
       <div className="mx-auto flex max-w-screen-md justify-around pb-[env(safe-area-inset-bottom)]">
         {TABS.map(({ href, label, icon: Icon }) => {
           const active =

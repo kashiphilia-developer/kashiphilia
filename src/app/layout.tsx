@@ -41,11 +41,11 @@ export default function RootLayout({
                 <ThemeControls />
               </div>
             </div>
-            <main className="flex-1 px-4 pb-24 pt-4 sm:px-6">{children}</main>
-            <footer className="border-t border-slate-200 bg-slate-50 px-4 py-3 text-center text-xs text-slate-500 sm:px-6">
+            <main className="flex-1 px-4 pb-32 pt-4 sm:px-6">{children}</main>
+            <BottomNav />
+            <footer className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200 bg-slate-50 px-4 py-2 text-center text-[11px] text-slate-500 sm:px-6">
               © 2026 Kashiphilia. All rights reserved.
             </footer>
-            <BottomNav />
           </div>
         </Providers>
       </body>

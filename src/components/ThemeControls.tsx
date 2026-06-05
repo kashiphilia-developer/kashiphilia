@@ -94,8 +94,7 @@ export default function ThemeControls() {
     }
   };
 
-  const themeLabel = theme === "light" ? "Light" : "Dark";
-  const autoLabel = autoMode ? "Auto theme enabled" : "Auto theme";
+  const themeLabel = theme === "light" ? "🌞 Light" : "🌙 Dark";
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -106,9 +105,7 @@ export default function ThemeControls() {
         className="btn-secondary"
         aria-label="Toggle light and dark theme"
       >
-        {autoMode
-          ? "Theme locked to schedule"
-          : `Switch to ${theme === "light" ? "dark" : "light"}`}
+        {autoMode ? "⏳" : theme === "light" ? "🌙" : "🌞"}
       </button>
       <button
         type="button"
@@ -117,7 +114,7 @@ export default function ThemeControls() {
         aria-pressed={autoMode}
         aria-label="Toggle auto theme based on local time"
       >
-        {autoMode ? "Auto theme on" : "Auto theme"}
+        🌗
       </button>
       <span className="text-xs text-slate-500">{themeLabel} mode</span>
       {autoMode && (
