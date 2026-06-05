@@ -42,6 +42,9 @@ export default function RootLayout({
               </div>
             </div>
             <main className="flex-1 px-4 pb-24 pt-4 sm:px-6">{children}</main>
+            <footer className="border-t border-slate-200 bg-slate-50 px-4 py-3 text-center text-xs text-slate-500 sm:px-6">
+              © 2026 Kashiphilia. All rights reserved.
+            </footer>
             <BottomNav />
           </div>
         </Providers>
